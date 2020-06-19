@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:provider/provider.dart';
 import 'package:moordor/data/moor_database.dart';
+import '../data/moor_database.dart';
 import 'arbol.dart';
 import 'edittree.dart';
 import 'newtree.dart';
@@ -121,80 +122,102 @@ class _HomePageState extends State<HomePage> {
 
     await Future.delayed(Duration(seconds: 2));
 
-    final database = Provider.of<AppDatabase>(context);
+    // Pull from remote and local
+    Future<Album> remoteAlbum = fetchAlbum();
+    final localDB = Provider.of<AppDatabase>(context);
 
-    StreamBuilder(
-    stream: database.watchAllTrees(),
-    builder: (context, AsyncSnapshot<List<Tree>> snapshot) {
-      final trees = snapshot.data ?? List();
-      return FutureBuilder<Album>(
-        future: futureAlbum,
-        builder: (context, snapshot) {
+    List<Tree> treesData;
 
-          var localtreeids = [];
-          var localdates = [];
+    Future<List<Tree>> localTrees = localDB.getAllTrees();
+      localTrees.then((localTreesData) => {
+        localTreesData.forEach((tree) {
+          treesData.add(tree);
+        })
+    });
 
-          if (snapshot.hasData) {
-            for(var i = 0; i < trees.length; i++) {
-              localtreeids.add(trees[i].treeid);
-              localdates.add(trees[i].lastupdate);
-            }
+    // Compare
+    // remoteAlbum.then((remoteDB) => {
 
-            var cloudtreeids = [];
-            var clouddates = [];
 
-            for(var i = 0; i < snapshot.data.clouddblength; i++) {
-              cloudtreeids.add(snapshot.data.treeid[i]);
-              clouddates.add(snapshot.data.lastupdate[i]);
-            }
+
+    //   remoteDB.treeid.forEach((id) {
+
+    //   })
+    // });
+
+
+    // StreamBuilder(
+    // stream: database.watchAllTrees(),
+    // builder: (context, AsyncSnapshot<List<Tree>> snapshot) {
+    //   final trees = snapshot.data ?? List();
+    //   return FutureBuilder<Album>(
+    //     future: futureAlbum,
+    //     builder: (context, snapshot) {
+
+    //       var localtreeids = [];
+    //       var localdates = [];
+
+    //       if (snapshot.hasData) {
+    //         for(var i = 0; i < trees.length; i++) {
+    //           localtreeids.add(trees[i].treeid);
+    //           localdates.add(trees[i].lastupdate);
+    //         }
+
+    //         var cloudtreeids = [];
+    //         var clouddates = [];
+
+    //         for(var i = 0; i < snapshot.data.clouddblength; i++) {
+    //           cloudtreeids.add(snapshot.data.treeid[i]);
+    //           clouddates.add(snapshot.data.lastupdate[i]);
+    //         }
             
-            var localtoadd = [];
-            var cloudtoadd = [];
+    //         var localtoadd = [];
+    //         var cloudtoadd = [];
 
-            localtreeids.forEach((element) {
-              if(!cloudtreeids.contains(element)){
-              } else {localtoadd.add(element);}
-            });
+    //         localtreeids.forEach((element) {
+    //           if(!cloudtreeids.contains(element)){
+    //           } else {localtoadd.add(element);}
+    //         });
 
-            cloudtreeids.forEach((element) {
-              if(!localtreeids.contains(element)){
-              } else {cloudtoadd.add(element);}
-            });
+    //         cloudtreeids.forEach((element) {
+    //           if(!localtreeids.contains(element)){
+    //           } else {cloudtoadd.add(element);}
+    //         });
 
-            for(var i = 0; i < localtoadd.length; i++) {
-              int index = localtreeids.indexWhere((treeid) => treeid == cloudtoadd[i]);
-              Tree cloudupdate = Tree(
-                treeid: snapshot.data.treeid[index],
-                type: snapshot.data.type[index],
-                ground: snapshot.data.ground[index],
-                trunk: snapshot.data.trunk[index],
-                height: snapshot.data.height[index],
-                top: snapshot.data.top[index],
-                diameter: snapshot.data.diameter[index],
-                longevity: snapshot.data.longevity[index],
-                recolection: snapshot.data.recolection[index],
-                spread: snapshot.data.spread[index],
-                seed: snapshot.data.seed[index],
-                seedtreatment: snapshot.data.seedtreatment[index],
-                lastupdate: DateTime.now(),
-                deleted: false
-              );
+    //         for(var i = 0; i < localtoadd.length; i++) {
+    //           int index = localtreeids.indexWhere((treeid) => treeid == cloudtoadd[i]);
+    //           Tree cloudupdate = Tree(
+    //             treeid: snapshot.data.treeid[index],
+    //             type: snapshot.data.type[index],
+    //             ground: snapshot.data.ground[index],
+    //             trunk: snapshot.data.trunk[index],
+    //             height: snapshot.data.height[index],
+    //             top: snapshot.data.top[index],
+    //             diameter: snapshot.data.diameter[index],
+    //             longevity: snapshot.data.longevity[index],
+    //             recolection: snapshot.data.recolection[index],
+    //             spread: snapshot.data.spread[index],
+    //             seed: snapshot.data.seed[index],
+    //             seedtreatment: snapshot.data.seedtreatment[index],
+    //             lastupdate: DateTime.now(),
+    //             deleted: false
+    //           );
 
-            database.insertTree(cloudupdate);
-            print('yah');
-            }
+    //         database.insertTree(cloudupdate);
+    //         print('yah');
+    //         }
 
-          } else if (snapshot.hasError) {
-            return Text("${snapshot.error}");
-          }
-          // By default, show a loading spinner.
-          return CircularProgressIndicator();
-          });
-        }
-      );
+    //       } else if (snapshot.hasError) {
+    //         return Text("${snapshot.error}");
+    //       }
+    //       // By default, show a loading spinner.
+    //       return CircularProgressIndicator();
+    //       });
+    //     }
+    //   );
+
       return null;
     }
-    // await(Future<ConnectivityResult> checkConnectivity) {}
 }
 
 Future<Album> fetchAlbum() async {
